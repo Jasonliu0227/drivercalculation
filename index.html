@@ -1,0 +1,858 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>代駕收入計算與月度總覽</title>
+  <style>
+    :root {
+      --primary: #0d6efd;
+      --success: #198754;
+      --danger: #dc3545;
+      --warning: #ffc107;
+      --dark: #212529;
+      --gray-bg: #f8f9fa;
+      --border: #dee2e6;
+    }
+    * { box-sizing: border-box; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
+    body { background-color: #eef2f5; margin: 0; padding: 12px; display: flex; justify-content: center; }
+    .container { width: 100%; max-width: 500px; display: flex; flex-direction: column; gap: 12px; }
+
+    /* 最上方即時時鐘頂欄 */
+    .time-header-bar {
+      background: linear-gradient(135deg, #0f172a, #1e293b);
+      color: #38bdf8;
+      border-radius: 10px;
+      padding: 8px 14px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.12);
+      font-size: 13px;
+      font-weight: bold;
+    }
+    .time-header-bar .time-display {
+      color: #f8fafc;
+      font-family: SFMono-Regular, Consolas, "Liberation Mono", Menlo, monospace;
+      font-size: 14px;
+      background: rgba(255, 255, 255, 0.1);
+      padding: 2px 8px;
+      border-radius: 6px;
+    }
+
+    /* 頂部 Tab 選單 */
+    .tab-bar { display: flex; background: #fff; border-radius: 10px; padding: 4px; box-shadow: 0 2px 8px rgba(0,0,0,0.06); }
+    .tab-btn { flex: 1; padding: 10px; border: none; background: transparent; font-size: 14px; font-weight: bold; color: #666; cursor: pointer; border-radius: 8px; text-align: center; }
+    .tab-btn.active { background: var(--primary); color: #fff; }
+
+    /* 頁面切換控制 */
+    .tab-content { display: none; flex-direction: column; gap: 12px; }
+    .tab-content.active { display: flex; }
+
+    .card { background: #fff; padding: 16px; border-radius: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.06); }
+    h3 { margin: 0 0 12px 0; font-size: 15px; border-left: 4px solid var(--primary); padding-left: 8px; color: var(--dark); }
+
+    .input-group { margin-bottom: 12px; }
+    label { display: block; font-size: 13px; font-weight: bold; color: #495057; margin-bottom: 4px; }
+    input, select { width: 100%; padding: 10px; font-size: 15px; border: 1px solid var(--border); border-radius: 6px; }
+    input:focus, select:focus { outline: none; border-color: var(--primary); }
+
+    /* 付款方式按鈕 */
+    .pay-type-group { display: flex; gap: 10px; margin-bottom: 12px; }
+    .pay-btn { flex: 1; padding: 10px; border: 1px solid var(--border); background: #fff; border-radius: 6px; font-size: 14px; font-weight: bold; cursor: pointer; text-align: center; }
+    .pay-btn.active-cash { background: #e8f5e9; border-color: var(--success); color: var(--success); }
+    .pay-btn.active-card { background: #e3f2fd; border-color: var(--primary); color: var(--primary); }
+
+    .single-result { background: #eef6ff; border: 1px solid #b6d4fe; padding: 10px; border-radius: 8px; text-align: center; margin-top: 8px; }
+    .single-result .amount { font-size: 24px; font-weight: bold; color: var(--primary); }
+
+    .trans-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; background: #fff8f8; padding: 12px; border-radius: 8px; border: 1px solid #ffe3e3; }
+    .trans-grid .input-group { margin-bottom: 0; }
+
+    .btn { width: 100%; padding: 12px; border: none; border-radius: 6px; font-size: 15px; font-weight: bold; cursor: pointer; transition: 0.2s; }
+    .btn-success { background: var(--success); color: #fff; }
+    .btn-dark { background: var(--dark); color: #fff; }
+    .btn-outline-primary { background: transparent; border: 1px solid var(--primary); color: var(--primary); padding: 4px 8px; font-size: 12px; border-radius: 4px; cursor: pointer; margin-right: 4px; }
+    .btn-outline-danger { background: transparent; border: 1px solid var(--danger); color: var(--danger); padding: 4px 8px; font-size: 12px; border-radius: 4px; cursor: pointer; }
+
+    .time-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; background: #f0f7ff; padding: 10px; border-radius: 8px; border: 1px solid #cce5ff; }
+
+    .summary-box { background: #f8f9fa; border: 1px solid var(--border); border-radius: 8px; padding: 12px; }
+    .stat-row { display: flex; justify-content: space-between; padding: 6px 0; border-bottom: 1px dashed #e0e0e0; font-size: 14px; }
+    .stat-row:last-child { border-bottom: none; font-weight: bold; }
+    .text-success { color: var(--success); }
+    .text-danger { color: var(--danger); }
+    .text-primary { color: var(--primary); }
+
+    .history-list { max-height: 240px; overflow-y: auto; margin-top: 8px; }
+    .history-item { display: flex; justify-content: space-between; align-items: center; padding: 8px; border-bottom: 1px solid #eee; font-size: 13px; }
+    .tag { padding: 2px 6px; border-radius: 4px; font-size: 11px; font-weight: bold; }
+    .tag-cash { background: #e8f5e9; color: var(--success); }
+    .tag-card { background: #e3f2fd; color: var(--primary); }
+
+    /* 月度總覽專屬樣式 */
+    .month-header-card { background: linear-gradient(135deg, #1e293b, #0f172a); color: #fff; border-radius: 12px; padding: 16px; }
+    .month-header-card h3 { color: #fff; border-left-color: var(--warning); }
+    .fee-badge { background: #fff3cd; color: #856404; padding: 10px; border-radius: 8px; font-size: 13px; font-weight: bold; margin-top: 10px; text-align: center; border: 1px solid #ffeeba; }
+    
+    .day-breakdown-item { display: flex; justify-content: space-between; align-items: center; background: #fff; padding: 10px 12px; border-radius: 8px; border: 1px solid var(--border); margin-bottom: 8px; cursor: pointer; transition: 0.15s; }
+    .day-breakdown-item:hover { background: #f0f7ff; border-color: var(--primary); }
+
+    /* 彈出編輯視窗 */
+    .modal-overlay { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.5); display: none; justify-content: center; align-items: center; z-index: 1000; padding: 15px; }
+    .modal { background: #fff; border-radius: 12px; padding: 20px; width: 100%; max-width: 400px; box-shadow: 0 10px 25px rgba(0,0,0,0.2); }
+
+    /* 迷你提示 Toast */
+    .toast-overlay { position: fixed; top: 20px; left: 50%; transform: translateX(-50%); z-index: 2000; display: none; }
+    .toast-box { background: #212529; color: #fff; padding: 10px 20px; border-radius: 20px; font-weight: bold; font-size: 14px; box-shadow: 0 4px 12px rgba(0,0,0,0.25); display: flex; align-items: center; gap: 8px; }
+  </style>
+</head>
+<body>
+
+<div class="container">
+  
+  <!-- 最上方台北標準時間列 (24小時制) -->
+  <div class="time-header-bar">
+    <div>🇹🇼 台北時間</div>
+    <div class="time-display" id="taipeiClock">加載中...</div>
+  </div>
+
+  <!-- 頂部 Tab 選單 -->
+  <div class="tab-bar">
+    <div class="tab-btn active" onclick="switchTab('tab-entry')">📝 今日記帳</div>
+    <div class="tab-btn" onclick="switchTab('tab-daily')">📊 每日數據</div>
+    <div class="tab-btn" onclick="switchTab('tab-monthly')">📅 月度總覽</div>
+  </div>
+
+  <!-- 【頁面 1：今日記帳】 -->
+  <div class="tab-content active" id="tab-entry">
+    <!-- 日期選擇卡片 -->
+    <div class="card">
+      <div class="input-group" style="margin: 0;">
+        <label for="workDate">📅 選擇工作日期</label>
+        <input type="date" id="workDate" onchange="onDateChange()">
+      </div>
+    </div>
+
+    <!-- 工作時間卡片 (24小時制區間) -->
+    <div class="card">
+      <h3>⏱️ 當日出勤時間 (24小時制區間)</h3>
+      <div class="time-grid">
+        <div class="input-group" style="margin: 0;">
+          <label for="startTime">開始時間 (24H)</label>
+          <select id="startTime" onchange="saveWorkHours()"></select>
+        </div>
+        <div class="input-group" style="margin: 0;">
+          <label for="endTime">結束時間 (24H)</label>
+          <select id="endTime" onchange="saveWorkHours()"></select>
+        </div>
+      </div>
+    </div>
+
+    <!-- 新增單筆訂單 -->
+    <div class="card">
+      <h3>新增單筆收入</h3>
+      <div class="input-group">
+        <label for="orderTime">⏰ 訂單時間 (24H選單，預設帶入當下)</label>
+        <select id="orderTime"></select>
+      </div>
+      <div class="input-group">
+        <label for="fare">總收入 (X)</label>
+        <input type="number" id="fare" placeholder="例如：500" oninput="calcSingle()">
+      </div>
+      <div class="input-group">
+        <label for="tip">小費 (+)</label>
+        <input type="number" id="tip" placeholder="0" oninput="calcSingle()">
+      </div>
+      <label>收款方式</label>
+      <div class="pay-type-group">
+        <div class="pay-btn active-cash" id="btnCash" onclick="setPayType('現金')">💵 現金</div>
+        <div class="pay-btn" id="btnCard" onclick="setPayType('刷卡')">💳 刷卡</div>
+      </div>
+      <div class="single-result">
+        <div style="font-size: 12px; color: #666;">本單估計實收 (X*0.8 - 65 + 小費)</div>
+        <div class="amount" id="singleNet">NT$ 0</div>
+      </div>
+      <button class="btn btn-success" style="margin-top: 10px;" onclick="addOrder()">新增這筆訂單</button>
+    </div>
+
+    <!-- 當日交通費 -->
+    <div class="card">
+      <h3>當日交通費總支出 (-)</h3>
+      <div class="trans-grid">
+        <div class="input-group">
+          <label for="t_wemo">1. WeMo</label>
+          <input type="number" id="t_wemo" placeholder="0" oninput="saveTransport()">
+        </div>
+        <div class="input-group">
+          <label for="t_goshare">2. GoShare</label>
+          <input type="number" id="t_goshare" placeholder="0" oninput="saveTransport()">
+        </div>
+        <div class="input-group">
+          <label for="t_carshare">3. 共享汽車</label>
+          <input type="number" id="t_carshare" placeholder="0" oninput="saveTransport()">
+        </div>
+        <div class="input-group">
+          <label for="t_transit">4. 大眾運輸</label>
+          <input type="number" id="t_transit" placeholder="0" oninput="saveTransport()">
+        </div>
+        <div class="input-group" style="grid-column: span 2;">
+          <label for="t_taxi">5. 叫車</label>
+          <input type="number" id="t_taxi" placeholder="0" oninput="saveTransport()">
+        </div>
+      </div>
+    </div>
+
+    <!-- 最下方獨立儲存按鈕 -->
+    <button class="btn btn-dark" style="margin-bottom: 15px; padding: 14px; font-size: 16px;" onclick="saveWholeDayRecord()">✅ 儲存並完成當日紀錄</button>
+  </div>
+
+  <!-- 【頁面 2：每日數據】 -->
+  <div class="tab-content" id="tab-daily">
+    <div class="card">
+      <h3><span id="displayDateText">當日</span> 數據詳情</h3>
+      <div class="summary-box">
+        <div class="stat-row">
+          <span>當日跑單數</span>
+          <span id="d_count">0 單</span>
+        </div>
+        <div class="stat-row">
+          <span>當日營業額 (原始總收入 X)</span>
+          <span class="text-primary" id="d_gross_fare">NT$ 0</span>
+        </div>
+        <div class="stat-row">
+          <span>當日小費總計</span>
+          <span id="d_tip_total">NT$ 0</span>
+        </div>
+        <div class="stat-row">
+          <span>💵 當日現金收取總額 (原始營業額+小費)</span>
+          <span class="text-success" id="d_cash_gross">NT$ 0</span>
+        </div>
+        <div class="stat-row">
+          <span>💳 當日刷卡扣20%實收 (預計撥款)</span>
+          <span class="text-primary" id="d_card_net_80">NT$ 0</span>
+        </div>
+        <!-- 刷卡 T+2 撥款動態提示 -->
+        <div class="stat-row" style="background: #e0f2fe; padding: 6px 8px; margin: 4px 0; border-radius: 6px; border: 1px solid #bae6fd;">
+          <span style="color: #0369a1; font-weight: bold;">📅 刷卡入帳預估 (T+2避開假日)</span>
+          <span style="color: #0284c7; font-weight: bold;" id="d_card_payout_date">無刷卡收入</span>
+        </div>
+        <div class="stat-row">
+          <span>單號實收總計 (已扣20%+65)</span>
+          <span id="d_order_net">NT$ 0</span>
+        </div>
+        <div class="stat-row">
+          <span>當日交通費總支出</span>
+          <span class="text-danger" id="d_trans_total">- NT$ 0</span>
+        </div>
+        <!-- 每日交通費占比 -->
+        <div class="stat-row" style="background: #fff3cd; padding: 6px 8px; margin: 2px 0; border-radius: 4px;">
+          <span style="color: #856404; font-weight: bold;">📊 當日交通費占比 (佔單號實收)</span>
+          <span style="color: #856404; font-weight: bold;" id="d_trans_ratio">0.0%</span>
+        </div>
+        <div class="stat-row" style="font-size: 16px; margin-top: 4px;">
+          <span>【當日最終淨利潤】</span>
+          <span class="text-success" id="d_final_profit">NT$ 0</span>
+        </div>
+        <div class="stat-row" style="background: #eef6ff; margin: 6px -12px -12px -12px; padding: 8px 12px; border-radius: 0 0 8px 8px;">
+          <span>⚡ 當日平均時薪 (共 <b id="d_hours_num">0</b> 小時)</span>
+          <span class="text-primary" id="d_hourly_wage" style="font-size: 16px;">NT$ 0 / 小時</span>
+        </div>
+      </div>
+
+      <div style="margin-top: 15px;">
+        <label>當日訂單明細 (可編輯/刪除)</label>
+        <div class="history-list" id="orderList"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 【頁面 3：月度總覽】 -->
+  <div class="tab-content" id="tab-monthly">
+    <div class="month-header-card">
+      <h3>整月營運總覽</h3>
+      <div class="input-group" style="margin-bottom: 12px;">
+        <label for="monthPicker" style="color: #ccc;">切換統計月份</label>
+        <input type="month" id="monthPicker" onchange="renderMonthSummary()" style="background: #334155; color: #fff; border-color: #475569;">
+      </div>
+
+      <div class="summary-box" style="background: rgba(255,255,255,0.05); color: #fff; border-color: rgba(255,255,255,0.1);">
+        <div class="stat-row" style="border-bottom-color: rgba(255,255,255,0.1);">
+          <span>當月跑單總數</span>
+          <span style="color: var(--warning);" id="m_count">0 單</span>
+        </div>
+        <div class="stat-row" style="border-bottom-color: rgba(255,255,255,0.1);">
+          <span>當月營業額 (原始總收入 X)</span>
+          <span style="color: #60a5fa;" id="m_gross">NT$ 0</span>
+        </div>
+        <div class="stat-row" style="border-bottom-color: rgba(255,255,255,0.1);">
+          <span>當月小費總額</span>
+          <span id="m_tip">NT$ 0</span>
+        </div>
+        <div class="stat-row" style="border-bottom-color: rgba(255,255,255,0.1);">
+          <span>平台抽成總額 (20%)</span>
+          <span style="color: #f87171;" id="m_cut">- NT$ 0</span>
+        </div>
+        <div class="stat-row" style="border-bottom-color: rgba(255,255,255,0.1);">
+          <span>定額平台費總計 ($65 × 單數)</span>
+          <span style="color: #f87171;" id="m_fix_fee">- NT$ 0</span>
+        </div>
+        <div class="stat-row" style="border-bottom-color: rgba(255,255,255,0.1);">
+          <span>當月交通費總支出</span>
+          <span style="color: #f87171;" id="m_trans">- NT$ 0</span>
+        </div>
+        <!-- 全月交通費總占比 -->
+        <div class="stat-row" style="border-bottom-color: rgba(255,255,255,0.1); background: rgba(251, 191, 36, 0.15); margin: 2px -12px; padding: 6px 12px;">
+          <span style="color: #fbbf24; font-weight: bold;">📊 當月交通費總占比 (佔當月單號實收)</span>
+          <span style="color: #fbbf24; font-weight: bold;" id="m_trans_ratio">0.0%</span>
+        </div>
+        <div class="stat-row" style="border-bottom-color: rgba(255,255,255,0.1);">
+          <span>當月總出勤工時</span>
+          <span style="color: #38bdf8;" id="m_work_hours">0 小時</span>
+        </div>
+        <div class="stat-row" style="font-size: 17px; margin-top: 4px;">
+          <span>【當月最終淨利潤】</span>
+          <span style="color: #4cd137;" id="m_profit">NT$ 0</span>
+        </div>
+        <div class="stat-row" style="background: rgba(14, 165, 233, 0.15); margin: 6px -12px -12px -12px; padding: 10px 12px; border-radius: 0 0 8px 8px;">
+          <span>⚡ 當月平均時薪</span>
+          <span style="color: #38bdf8; font-size: 18px;" id="m_hourly_wage">NT$ 0 / 小時</span>
+        </div>
+      </div>
+
+      <div class="fee-badge">
+        📌 下個月需給公司的平台費 (單數 × 65)：<br>
+        <span style="font-size: 22px; color: #d97706;" id="m_platform_fee">NT$ 0</span>
+      </div>
+    </div>
+
+    <!-- 當月每日拆解列表 -->
+    <div class="card">
+      <h3>當月每日營運明細 (點擊可查看該日)</h3>
+      <div id="monthDayBreakdown"></div>
+    </div>
+  </div>
+
+</div>
+
+<!-- 彈出式 Toast 迷你提示視窗 -->
+<div class="toast-overlay" id="toastBox">
+  <div class="toast-box">✅ 已完成當日紀錄！</div>
+</div>
+
+<!-- 彈出式編輯訂單 Modal -->
+<div class="modal-overlay" id="editModal">
+  <div class="modal">
+    <h3>✏️ 編輯訂單數據</h3>
+    <input type="hidden" id="edit_id">
+    <div class="input-group">
+      <label for="edit_orderTime">訂單時間 (24H)</label>
+      <select id="edit_orderTime"></select>
+    </div>
+    <div class="input-group">
+      <label for="edit_fare">總收入 (X)</label>
+      <input type="number" id="edit_fare">
+    </div>
+    <div class="input-group">
+      <label for="edit_tip">小費</label>
+      <input type="number" id="edit_tip">
+    </div>
+    <label>收款方式</label>
+    <div class="pay-type-group">
+      <div class="pay-btn" id="editBtnCash" onclick="setEditPayType('現金')">💵 現金</div>
+      <div class="pay-btn" id="editBtnCard" onclick="setEditPayType('刷卡')">💳 刷卡</div>
+    </div>
+    <div style="display: flex; gap: 10px; margin-top: 15px;">
+      <button class="btn btn-dark" onclick="closeEditModal()">取消</button>
+      <button class="btn btn-success" style="margin: 0;" onclick="saveEditedOrder()">儲存修改</button>
+    </div>
+  </div>
+</div>
+
+<script>
+  let currentPayType = '現金';
+  let editPayType = '現金';
+  let db = JSON.parse(localStorage.getItem('driver_db_v2')) || {};
+
+  const todayStr = new Date().toISOString().split('T')[0];
+  document.getElementById('workDate').value = todayStr;
+  document.getElementById('monthPicker').value = todayStr.substring(0, 7);
+
+  // 台北標準時間實時動態時鐘 (24小時制)
+  function updateTaipeiClock() {
+    const now = new Date();
+    const options = {
+      timeZone: 'Asia/Taipei',
+      year: 'numeric',
+      month: '2-digit',
+      day: '2-digit',
+      weekday: 'short',
+      hour: '2-digit',
+      minute: '2-digit',
+      second: '2-digit',
+      hour12: false
+    };
+    const formatter = new Intl.DateTimeFormat('zh-TW', options);
+    const parts = formatter.formatToParts(now);
+    
+    let year='', month='', day='', weekday='', hour='', minute='', second='';
+    parts.forEach(p => {
+      if (p.type === 'year') year = p.value;
+      if (p.type === 'month') month = p.value;
+      if (p.type === 'day') day = p.value;
+      if (p.type === 'weekday') weekday = p.value;
+      if (p.type === 'hour') hour = p.value;
+      if (p.type === 'minute') minute = p.value;
+      if (p.type === 'second') second = p.value;
+    });
+
+    const formattedTime = `${year}/${month}/${day} (${weekday}) ${hour}:${minute}:${second}`;
+    document.getElementById('taipeiClock').innerText = formattedTime;
+  }
+
+  setInterval(updateTaipeiClock, 1000);
+  updateTaipeiClock();
+
+  // 初始化 24 小時時間選擇清單 (以 15 分鐘為間隔)
+  function initTimeOptions() {
+    const startSelect = document.getElementById('startTime');
+    const endSelect = document.getElementById('endTime');
+    const orderSelect = document.getElementById('orderTime');
+    const editOrderSelect = document.getElementById('edit_orderTime');
+
+    let html = '<option value="">未設定</option>';
+    let orderHtml = '';
+    for (let h = 0; h < 24; h++) {
+      for (let m = 0; m < 60; m += 15) {
+        const hh = String(h).padStart(2, '0');
+        const mm = String(m).padStart(2, '0');
+        const timeStr = `${hh}:${mm}`;
+        html += `<option value="${timeStr}">${timeStr}</option>`;
+        orderHtml += `<option value="${timeStr}">${timeStr}</option>`;
+      }
+    }
+    startSelect.innerHTML = html;
+    endSelect.innerHTML = html;
+    orderSelect.innerHTML = orderHtml;
+    editOrderSelect.innerHTML = orderHtml;
+
+    setOrderTimeNow();
+  }
+
+  function setOrderTimeNow() {
+    const now = new Date();
+    const formatter = new Intl.DateTimeFormat('zh-TW', {
+      timeZone: 'Asia/Taipei',
+      hour: '2-digit',
+      minute: '2-digit',
+      hour12: false
+    });
+    const nowStr = formatter.format(now);
+    const [h, m] = nowStr.split(':').map(Number);
+    const roundedM = Math.floor(m / 15) * 15;
+    const targetStr = `${String(h).padStart(2, '0')}:${String(roundedM).padStart(2, '0')}`;
+    document.getElementById('orderTime').value = targetStr;
+  }
+
+  initTimeOptions();
+  initDateData(todayStr);
+  renderAll();
+
+  function switchTab(tabId) {
+    document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+    document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+    
+    event.target.classList.add('active');
+    document.getElementById(tabId).classList.add('active');
+  }
+
+  function initDateData(dateStr) {
+    if (!db[dateStr]) {
+      db[dateStr] = {
+        orders: [],
+        transport: { wemo: 0, goshare: 0, carshare: 0, transit: 0, taxi: 0 },
+        workHours: { startTime: '', endTime: '' }
+      };
+    }
+  }
+
+  function getSelectedDate() {
+    return document.getElementById('workDate').value || todayStr;
+  }
+
+  function onDateChange() {
+    const d = getSelectedDate();
+    initDateData(d);
+    loadInputsForSelectedDate();
+    renderAll();
+  }
+
+  function setPayType(type) {
+    currentPayType = type;
+    document.getElementById('btnCash').className = type === '現金' ? 'pay-btn active-cash' : 'pay-btn';
+    document.getElementById('btnCard').className = type === '刷卡' ? 'pay-btn active-card' : 'pay-btn';
+  }
+
+  function setEditPayType(type) {
+    editPayType = type;
+    document.getElementById('editBtnCash').className = type === '現金' ? 'pay-btn active-cash' : 'pay-btn';
+    document.getElementById('editBtnCard').className = type === '刷卡' ? 'pay-btn active-card' : 'pay-btn';
+  }
+
+  function calcNet(fare, tip) {
+    let net = 0;
+    if (fare > 0) net = (fare * 0.8 - 65) + tip;
+    else if (tip > 0) net = tip;
+    return Math.round(net);
+  }
+
+  function calcSingle() {
+    const fare = parseFloat(document.getElementById('fare').value) || 0;
+    const tip = parseFloat(document.getElementById('tip').value) || 0;
+    const net = calcNet(fare, tip);
+    document.getElementById('singleNet').innerText = `NT$ ${net.toLocaleString('zh-TW')}`;
+    return net;
+  }
+
+  function addOrder() {
+    const fare = parseFloat(document.getElementById('fare').value) || 0;
+    const tip = parseFloat(document.getElementById('tip').value) || 0;
+    if (fare === 0 && tip === 0) return;
+
+    const net = calcSingle();
+    const d = getSelectedDate();
+    const time = document.getElementById('orderTime').value || '00:00';
+
+    db[d].orders.unshift({
+      id: Date.now(),
+      time,
+      fare,
+      tip,
+      net,
+      payType: currentPayType
+    });
+
+    saveDB();
+    document.getElementById('fare').value = '';
+    document.getElementById('tip').value = '';
+    calcSingle();
+    setOrderTimeNow();
+    renderAll();
+  }
+
+  function saveWholeDayRecord() {
+    saveTransport();
+    saveWorkHours();
+    saveDB();
+    renderAll();
+
+    const toast = document.getElementById('toastBox');
+    toast.style.display = 'block';
+    setTimeout(() => {
+      toast.style.display = 'none';
+    }, 2500);
+  }
+
+  function deleteOrder(id) {
+    if (!confirm('確定刪除這筆訂單？')) return;
+    const d = getSelectedDate();
+    db[d].orders = db[d].orders.filter(o => o.id !== id);
+    saveDB();
+    renderAll();
+  }
+
+  function openEditModal(id) {
+    const d = getSelectedDate();
+    const order = db[d].orders.find(o => o.id === id);
+    if (!order) return;
+
+    document.getElementById('edit_id').value = order.id;
+    document.getElementById('edit_orderTime').value = order.time;
+    document.getElementById('edit_fare').value = order.fare;
+    document.getElementById('edit_tip').value = order.tip;
+    setEditPayType(order.payType);
+
+    document.getElementById('editModal').style.display = 'flex';
+  }
+
+  function closeEditModal() {
+    document.getElementById('editModal').style.display = 'none';
+  }
+
+  function saveEditedOrder() {
+    const id = parseInt(document.getElementById('edit_id').value);
+    const time = document.getElementById('edit_orderTime').value;
+    const fare = parseFloat(document.getElementById('edit_fare').value) || 0;
+    const tip = parseFloat(document.getElementById('edit_tip').value) || 0;
+    const d = getSelectedDate();
+
+    const idx = db[d].orders.findIndex(o => o.id === id);
+    if (idx !== -1) {
+      db[d].orders[idx].time = time;
+      db[d].orders[idx].fare = fare;
+      db[d].orders[idx].tip = tip;
+      db[d].orders[idx].payType = editPayType;
+      db[d].orders[idx].net = calcNet(fare, tip);
+    }
+
+    saveDB();
+    closeEditModal();
+    renderAll();
+  }
+
+  function saveWorkHours() {
+    const d = getSelectedDate();
+    if (!db[d].workHours) db[d].workHours = {};
+    db[d].workHours.startTime = document.getElementById('startTime').value;
+    db[d].workHours.endTime = document.getElementById('endTime').value;
+    saveDB();
+    renderDaySummary();
+    renderMonthSummary();
+  }
+
+  function getWorkHoursCount(dateStr) {
+    const wh = db[dateStr]?.workHours;
+    if (!wh || !wh.startTime || !wh.endTime) return 0;
+    const [startH, startM] = wh.startTime.split(':').map(Number);
+    const [endH, endM] = wh.endTime.split(':').map(Number);
+    let startTotal = startH * 60 + startM;
+    let endTotal = endH * 60 + endM;
+    if (endTotal < startTotal) endTotal += 24 * 60;
+    return (endTotal - startTotal) / 60;
+  }
+
+  function calculateTPlus2BusinessDay(dateStr) {
+    const date = new Date(dateStr + 'T00:00:00');
+    let addedDays = 0;
+    while (addedDays < 2) {
+      date.setDate(date.getDate() + 1);
+      const dayOfWeek = date.getDay();
+      if (dayOfWeek !== 0 && dayOfWeek !== 6) {
+        addedDays++;
+      }
+    }
+    const weekNames = ['日', '一', '二', '三', '四', '五', '六'];
+    const m = date.getMonth() + 1;
+    const d = date.getDate();
+    const w = weekNames[date.getDay()];
+    return `${m}/${d} (${w})`;
+  }
+
+  function saveTransport() {
+    const d = getSelectedDate();
+    db[d].transport = {
+      wemo: parseFloat(document.getElementById('t_wemo').value) || 0,
+      goshare: parseFloat(document.getElementById('t_goshare').value) || 0,
+      carshare: parseFloat(document.getElementById('t_carshare').value) || 0,
+      transit: parseFloat(document.getElementById('t_transit').value) || 0,
+      taxi: parseFloat(document.getElementById('t_taxi').value) || 0
+    };
+    saveDB();
+    renderDaySummary();
+    renderMonthSummary();
+  }
+
+  function loadInputsForSelectedDate() {
+    const d = getSelectedDate();
+    const t = db[d].transport || {};
+    document.getElementById('t_wemo').value = t.wemo || '';
+    document.getElementById('t_goshare').value = t.goshare || '';
+    document.getElementById('t_carshare').value = t.carshare || '';
+    document.getElementById('t_transit').value = t.transit || '';
+    document.getElementById('t_taxi').value = t.taxi || '';
+
+    const wh = db[d].workHours || {};
+    document.getElementById('startTime').value = wh.startTime || '';
+    document.getElementById('endTime').value = wh.endTime || '';
+  }
+
+  function saveDB() {
+    localStorage.setItem('driver_db_v2', JSON.stringify(db));
+  }
+
+  function renderAll() {
+    loadInputsForSelectedDate();
+    renderDaySummary();
+    renderMonthSummary();
+  }
+
+  // 渲染當日數據頁
+  function renderDaySummary() {
+    const d = getSelectedDate();
+    const data = db[d] || { orders: [], transport: {}, workHours: {} };
+    document.getElementById('displayDateText').innerText = d;
+
+    let grossFare = 0;
+    let totalTip = 0;
+    let totalOrderNet = 0;
+    let cashGrossTotal = 0; // 現金總營業額（原始總收入 + 小費）
+    let cardGrossTotal = 0;
+
+    const listEl = document.getElementById('orderList');
+    listEl.innerHTML = '';
+
+    data.orders.forEach(o => {
+      grossFare += o.fare;
+      totalTip += o.tip;
+      totalOrderNet += o.net;
+
+      if (o.payType === '現金') {
+        cashGrossTotal += (o.fare + o.tip); // 未扣抽成的原始現金收取量
+      } else if (o.payType === '刷卡') {
+        cardGrossTotal += o.fare;
+      }
+
+      const item = document.createElement('div');
+      item.className = 'history-item';
+      item.innerHTML = `
+        <div>
+          <span>${o.time}</span>
+          <span class="tag ${o.payType==='現金'?'tag-cash':'tag-card'}">${o.payType}</span>
+          <span>收入$${o.fare} (小費$${o.tip})</span>
+        </div>
+        <div>
+          <strong>NT$ ${o.net.toLocaleString('zh-TW')}</strong>
+          <button class="btn-outline-primary" onclick="openEditModal(${o.id})">✏️</button>
+          <button class="btn-outline-danger" onclick="deleteOrder(${o.id})">✕</button>
+        </div>
+      `;
+      listEl.appendChild(item);
+    });
+
+    const cardNet80 = Math.round(cardGrossTotal * 0.8);
+
+    let cardPayoutText = '無刷卡收入';
+    if (cardGrossTotal > 0) {
+      const payoutDateStr = calculateTPlus2BusinessDay(d);
+      cardPayoutText = `預計於 ${payoutDateStr} 撥款實收 NT$ ${cardNet80.toLocaleString('zh-TW')}`;
+    }
+
+    const t = data.transport || {};
+    const transTotal = (t.wemo || 0) + (t.goshare || 0) + (t.carshare || 0) + (t.transit || 0) + (t.taxi || 0);
+    const finalProfit = totalOrderNet - transTotal;
+
+    let dayTransRatioText = '0.0%';
+    if (totalOrderNet > 0) {
+      dayTransRatioText = `${((transTotal / totalOrderNet) * 100).toFixed(1)}%`;
+    }
+
+    const hours = getWorkHoursCount(d);
+    let hourlyWageText = 'NT$ 0 / 小時';
+    if (hours > 0) {
+      const wage = Math.round(finalProfit / hours);
+      hourlyWageText = `NT$ ${wage.toLocaleString('zh-TW')} / 小時`;
+    }
+
+    document.getElementById('d_count').innerText = `${data.orders.length} 單`;
+    document.getElementById('d_gross_fare').innerText = `NT$ ${grossFare.toLocaleString('zh-TW')}`;
+    document.getElementById('d_tip_total').innerText = `NT$ ${totalTip.toLocaleString('zh-TW')}`;
+    document.getElementById('d_cash_gross').innerText = `NT$ ${cashGrossTotal.toLocaleString('zh-TW')}`;
+    document.getElementById('d_card_net_80').innerText = `NT$ ${cardNet80.toLocaleString('zh-TW')}`;
+    document.getElementById('d_card_payout_date').innerText = cardPayoutText;
+    document.getElementById('d_order_net').innerText = `NT$ ${totalOrderNet.toLocaleString('zh-TW')}`;
+    document.getElementById('d_trans_total').innerText = `- NT$ ${transTotal.toLocaleString('zh-TW')}`;
+    document.getElementById('d_trans_ratio').innerText = dayTransRatioText;
+    document.getElementById('d_final_profit').innerText = `NT$ ${finalProfit.toLocaleString('zh-TW')}`;
+    document.getElementById('d_hours_num').innerText = hours > 0 ? hours.toFixed(1) : '0';
+    document.getElementById('d_hourly_wage').innerText = hourlyWageText;
+  }
+
+  // 渲染月度總覽頁
+  function renderMonthSummary() {
+    const selectedMonth = document.getElementById('monthPicker').value;
+    let mCount = 0;
+    let mGross = 0;
+    let mTip = 0;
+    let mTrans = 0;
+    let mOrderNetTotal = 0;
+    let mNetTotal = 0;
+    let mHoursTotal = 0;
+
+    const breakdownEl = document.getElementById('monthDayBreakdown');
+    breakdownEl.innerHTML = '';
+
+    const monthDates = Object.keys(db).filter(d => d.startsWith(selectedMonth)).sort().reverse();
+
+    monthDates.forEach(dateStr => {
+      const dayData = db[dateStr];
+      const orders = dayData.orders || [];
+      const dHours = getWorkHoursCount(dateStr);
+      if (orders.length === 0 && !dayData.transport && dHours === 0) return;
+
+      const dCount = orders.length;
+      const dGross = orders.reduce((s, o) => s + o.fare, 0);
+      const dTip = orders.reduce((s, o) => s + o.tip, 0);
+      const dOrderNet = orders.reduce((s, o) => s + o.net, 0);
+
+      const t = dayData.transport || {};
+      const dTrans = (t.wemo || 0) + (t.goshare || 0) + (t.carshare || 0) + (t.transit || 0) + (t.taxi || 0);
+      const dProfit = dOrderNet - dTrans;
+
+      let ratioText = '0.0%';
+      if (dOrderNet > 0) {
+        ratioText = `${((dTrans / dOrderNet) * 100).toFixed(1)}%`;
+      }
+
+      mCount += dCount;
+      mGross += dGross;
+      mTip += dTip;
+      mTrans += dTrans;
+      mOrderNetTotal += dOrderNet;
+      mNetTotal += dProfit;
+      mHoursTotal += dHours;
+
+      const item = document.createElement('div');
+      item.className = 'day-breakdown-item';
+      item.onclick = () => {
+        document.getElementById('workDate').value = dateStr;
+        onDateChange();
+        document.querySelectorAll('.tab-btn')[1].click();
+      };
+      item.innerHTML = `
+        <div>
+          <div style="font-weight: bold;">${dateStr} (${dCount}單)</div>
+          <div style="font-size: 12px; color: #666;">
+            營業額: $${dGross.toLocaleString('zh-TW')} | 交通費: $${dTrans.toLocaleString('zh-TW')}
+          </div>
+          <div style="font-size: 11px; color: #d97706; font-weight: bold; margin-top: 2px;">
+            交通費占比: ${ratioText}
+          </div>
+        </div>
+        <div style="text-align: right;">
+          <div style="font-weight: bold; color: var(--success);">NT$ ${dProfit.toLocaleString('zh-TW')}</div>
+          <div style="font-size: 11px; color: var(--primary);">查看細節 ›</div>
+        </div>
+      `;
+      breakdownEl.appendChild(item);
+    });
+
+    const mPlatformCut = Math.round(mGross * 0.2);
+    const mFixFee = mCount * 65;
+
+    let mTransRatioText = '0.0%';
+    if (mOrderNetTotal > 0) {
+      mTransRatioText = `${((mTrans / mOrderNetTotal) * 100).toFixed(1)}%`;
+    }
+
+    let mHourlyWageText = 'NT$ 0 / 小時';
+    if (mHoursTotal > 0) {
+      const wage = Math.round(mNetTotal / mHoursTotal);
+      mHourlyWageText = `NT$ ${wage.toLocaleString('zh-TW')} / 小時`;
+    }
+
+    document.getElementById('m_count').innerText = `${mCount} 單`;
+    document.getElementById('m_gross').innerText = `NT$ ${mGross.toLocaleString('zh-TW')}`;
+    document.getElementById('m_tip').innerText = `NT$ ${mTip.toLocaleString('zh-TW')}`;
+    document.getElementById('m_cut').innerText = `- NT$ ${mPlatformCut.toLocaleString('zh-TW')}`;
+    document.getElementById('m_fix_fee').innerText = `- NT$ ${mFixFee.toLocaleString('zh-TW')}`;
+    document.getElementById('m_trans').innerText = `- NT$ ${mTrans.toLocaleString('zh-TW')}`;
+    document.getElementById('m_trans_ratio').innerText = mTransRatioText;
+    document.getElementById('m_work_hours').innerText = `${mHoursTotal.toFixed(1)} 小時`;
+    document.getElementById('m_profit').innerText = `NT$ ${mNetTotal.toLocaleString('zh-TW')}`;
+    document.getElementById('m_hourly_wage').innerText = mHourlyWageText;
+    document.getElementById('m_platform_fee').innerText = `NT$ ${mFixFee.toLocaleString('zh-TW')}`;
+  }
+</script>
+
+</body>
+</html>
