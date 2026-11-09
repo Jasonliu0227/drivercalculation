@@ -2,139 +2,175 @@
 <html lang="zh-TW">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <title>代駕收入計算與月度總覽</title>
   <style>
     :root {
-      --primary: #0d6efd;
-      --success: #198754;
-      --danger: #dc3545;
-      --warning: #ffc107;
-      --dark: #212529;
-      --gray-bg: #f8f9fa;
-      --border: #dee2e6;
+      --primary: #2563eb;
+      --primary-hover: #1d4ed8;
+      --success: #10b981;
+      --success-bg: #ecfdf5;
+      --danger: #ef4444;
+      --warning: #f59e0b;
+      --dark: #0f172a;
+      --slate: #475569;
+      --gray-bg: #f8fafc;
+      --card-bg: #ffffff;
+      --border: #e2e8f0;
+      --shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -2px rgba(0, 0, 0, 0.05);
+      --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.08), 0 4px 6px -4px rgba(0, 0, 0, 0.04);
     }
-    * { box-sizing: border-box; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
-    body { background-color: #eef2f5; margin: 0; padding: 12px; display: flex; justify-content: center; }
-    .container { width: 100%; max-width: 500px; display: flex; flex-direction: column; gap: 12px; }
+    * { box-sizing: border-box; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; -webkit-tap-highlight-color: transparent; }
+    body { background-color: #f1f5f9; margin: 0; padding: 12px; display: flex; justify-content: center; color: #1e293b; }
+    .container { width: 100%; max-width: 480px; display: flex; flex-direction: column; gap: 14px; }
 
-    /* 最上方即時時鐘頂欄 */
+    /* 頂欄實時時鐘 */
     .time-header-bar {
       background: linear-gradient(135deg, #0f172a, #1e293b);
       color: #38bdf8;
-      border-radius: 10px;
-      padding: 8px 14px;
+      border-radius: 12px;
+      padding: 10px 16px;
       display: flex;
       justify-content: space-between;
       align-items: center;
-      box-shadow: 0 2px 6px rgba(0,0,0,0.12);
+      box-shadow: var(--shadow-lg);
       font-size: 13px;
-      font-weight: bold;
+      font-weight: 600;
     }
     .time-header-bar .time-display {
       color: #f8fafc;
       font-family: SFMono-Regular, Consolas, "Liberation Mono", Menlo, monospace;
-      font-size: 14px;
-      background: rgba(255, 255, 255, 0.1);
-      padding: 2px 8px;
-      border-radius: 6px;
+      font-size: 12px;
+      background: rgba(255, 255, 255, 0.12);
+      padding: 3px 8px;
+      border-radius: 8px;
     }
 
-    /* 頂部 Tab 選單 */
-    .tab-bar { display: flex; background: #fff; border-radius: 10px; padding: 4px; box-shadow: 0 2px 8px rgba(0,0,0,0.06); }
-    .tab-btn { flex: 1; padding: 10px; border: none; background: transparent; font-size: 14px; font-weight: bold; color: #666; cursor: pointer; border-radius: 8px; text-align: center; }
-    .tab-btn.active { background: var(--primary); color: #fff; }
+    /* 頂部 Tab 選單 (4個 Tab) */
+    .tab-bar { display: flex; background: #ffffff; border-radius: 12px; padding: 4px; box-shadow: var(--shadow); border: 1px solid var(--border); gap: 2px; }
+    .tab-btn { flex: 1; padding: 10px 0; border: none; background: transparent; font-size: 13px; font-weight: 700; color: var(--slate); cursor: pointer; border-radius: 9px; text-align: center; transition: all 0.2s ease; white-space: nowrap; }
+    .tab-btn.active { background: var(--primary); color: #fff; box-shadow: 0 2px 8px rgba(37, 99, 235, 0.3); }
 
     /* 頁面切換控制 */
-    .tab-content { display: none; flex-direction: column; gap: 12px; }
+    .tab-content { display: none; flex-direction: column; gap: 14px; animation: fadeIn 0.25s ease-in-out; }
     .tab-content.active { display: flex; }
+    @keyframes fadeIn { from { opacity: 0; transform: translateY(3px); } to { opacity: 1; transform: translateY(0); } }
 
-    .card { background: #fff; padding: 16px; border-radius: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.06); }
-    h3 { margin: 0 0 12px 0; font-size: 15px; border-left: 4px solid var(--primary); padding-left: 8px; color: var(--dark); }
+    .card { background: var(--card-bg); padding: 18px; border-radius: 16px; box-shadow: var(--shadow); border: 1px solid var(--border); }
+    h3 { margin: 0 0 14px 0; font-size: 16px; border-left: 4px solid var(--primary); padding-left: 10px; color: var(--dark); display: flex; align-items: center; justify-content: space-between; }
 
     .input-group { margin-bottom: 12px; }
-    label { display: block; font-size: 13px; font-weight: bold; color: #495057; margin-bottom: 4px; }
-    input, select { width: 100%; padding: 10px; font-size: 15px; border: 1px solid var(--border); border-radius: 6px; }
-    input:focus, select:focus { outline: none; border-color: var(--primary); }
+    label { display: block; font-size: 13px; font-weight: 700; color: var(--slate); margin-bottom: 6px; }
+    input, select { width: 100%; padding: 12px; font-size: 15px; border: 1px solid var(--border); border-radius: 10px; background-color: #f8fafc; transition: all 0.2s; color: #0f172a; }
+    input:focus, select:focus { outline: none; border-color: var(--primary); background-color: #ffffff; box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.15); }
+
+    /* 快捷選擇按鈕 */
+    .quick-amt-group { display: flex; gap: 6px; margin-bottom: 10px; }
+    .quick-amt-btn { flex: 1; padding: 7px 0; border: 1px dashed #cbd5e1; background: #f8fafc; border-radius: 6px; font-size: 12px; font-weight: 600; color: var(--slate); cursor: pointer; text-align: center; }
+    .quick-amt-btn:active { background: #e2e8f0; }
 
     /* 付款方式按鈕 */
-    .pay-type-group { display: flex; gap: 10px; margin-bottom: 12px; }
-    .pay-btn { flex: 1; padding: 10px; border: 1px solid var(--border); background: #fff; border-radius: 6px; font-size: 14px; font-weight: bold; cursor: pointer; text-align: center; }
-    .pay-btn.active-cash { background: #e8f5e9; border-color: var(--success); color: var(--success); }
-    .pay-btn.active-card { background: #e3f2fd; border-color: var(--primary); color: var(--primary); }
+    .pay-type-group { display: flex; gap: 10px; margin-bottom: 14px; }
+    .pay-btn { flex: 1; padding: 12px; border: 1.5px solid var(--border); background: #fff; border-radius: 10px; font-size: 15px; font-weight: 700; cursor: pointer; text-align: center; transition: all 0.2s; color: var(--slate); }
+    .pay-btn.active-cash { background: #ecfdf5; border-color: var(--success); color: #047857; }
+    .pay-btn.active-card { background: #eff6ff; border-color: var(--primary); color: var(--primary); }
 
-    .single-result { background: #eef6ff; border: 1px solid #b6d4fe; padding: 10px; border-radius: 8px; text-align: center; margin-top: 8px; }
-    .single-result .amount { font-size: 24px; font-weight: bold; color: var(--primary); }
+    .single-result { background: #eff6ff; border: 1px solid #bfdbfe; padding: 12px; border-radius: 12px; text-align: center; margin-top: 10px; }
+    .single-result .amount { font-size: 26px; font-weight: 800; color: var(--primary); margin-top: 2px; }
 
-    .trans-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; background: #fff8f8; padding: 12px; border-radius: 8px; border: 1px solid #ffe3e3; }
+    .trans-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; background: #fff5f5; padding: 14px; border-radius: 12px; border: 1px solid #fecdd3; }
     .trans-grid .input-group { margin-bottom: 0; }
 
-    .btn { width: 100%; padding: 12px; border: none; border-radius: 6px; font-size: 15px; font-weight: bold; cursor: pointer; transition: 0.2s; }
-    .btn-success { background: var(--success); color: #fff; }
-    .btn-dark { background: var(--dark); color: #fff; }
-    .btn-outline-primary { background: transparent; border: 1px solid var(--primary); color: var(--primary); padding: 4px 8px; font-size: 12px; border-radius: 4px; cursor: pointer; margin-right: 4px; }
-    .btn-outline-danger { background: transparent; border: 1px solid var(--danger); color: var(--danger); padding: 4px 8px; font-size: 12px; border-radius: 4px; cursor: pointer; }
+    .btn { width: 100%; padding: 14px; border: none; border-radius: 12px; font-size: 15px; font-weight: 700; cursor: pointer; transition: all 0.2s; display: flex; justify-content: center; align-items: center; gap: 6px; }
+    .btn-success { background: var(--success); color: #fff; box-shadow: 0 3px 10px rgba(16, 185, 129, 0.25); }
+    .btn-success:active { background: #059669; }
+    .btn-dark { background: var(--dark); color: #fff; box-shadow: 0 3px 10px rgba(15, 23, 42, 0.2); }
+    .btn-dark:active { background: #1e293b; }
+    .btn-outline-primary { background: #eff6ff; border: 1px solid #bfdbfe; color: var(--primary); padding: 5px 10px; font-size: 12px; border-radius: 6px; cursor: pointer; font-weight: 600; }
+    .btn-outline-danger { background: #fef2f2; border: 1px solid #fecdd3; color: var(--danger); padding: 5px 10px; font-size: 12px; border-radius: 6px; cursor: pointer; font-weight: 600; }
 
-    .time-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; background: #f0f7ff; padding: 10px; border-radius: 8px; border: 1px solid #cce5ff; }
+    .time-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; background: #f0f9ff; padding: 12px; border-radius: 12px; border: 1px solid #bae6fd; }
 
-    .summary-box { background: #f8f9fa; border: 1px solid var(--border); border-radius: 8px; padding: 12px; }
-    .stat-row { display: flex; justify-content: space-between; padding: 6px 0; border-bottom: 1px dashed #e0e0e0; font-size: 14px; }
-    .stat-row:last-child { border-bottom: none; font-weight: bold; }
-    .text-success { color: var(--success); }
-    .text-danger { color: var(--danger); }
-    .text-primary { color: var(--primary); }
+    .summary-box { background: #ffffff; border: 1px solid var(--border); border-radius: 12px; padding: 14px; }
+    .stat-row { display: flex; justify-content: space-between; align-items: center; padding: 8px 0; border-bottom: 1px dashed #e2e8f0; font-size: 14px; }
+    .stat-row:last-child { border-bottom: none; }
+    .text-success { color: var(--success); font-weight: 700; }
+    .text-danger { color: var(--danger); font-weight: 700; }
+    .text-primary { color: var(--primary); font-weight: 700; }
 
-    .history-list { max-height: 240px; overflow-y: auto; margin-top: 8px; }
-    .history-item { display: flex; justify-content: space-between; align-items: center; padding: 8px; border-bottom: 1px solid #eee; font-size: 13px; }
-    .tag { padding: 2px 6px; border-radius: 4px; font-size: 11px; font-weight: bold; }
-    .tag-cash { background: #e8f5e9; color: var(--success); }
-    .tag-card { background: #e3f2fd; color: var(--primary); }
+    /* 重點亮點卡片 */
+    .hero-stat-card { background: linear-gradient(135deg, #059669, #10b981); color: #ffffff; padding: 16px; border-radius: 14px; text-align: center; margin-top: 10px; box-shadow: 0 4px 12px rgba(16, 185, 129, 0.2); }
+    .hero-stat-card .val { font-size: 28px; font-weight: 800; margin-top: 4px; }
+
+    .history-list { max-height: 260px; overflow-y: auto; margin-top: 10px; display: flex; flex-direction: column; gap: 8px; }
+    .history-item { display: flex; justify-content: space-between; align-items: center; padding: 10px 12px; background: #f8fafc; border: 1px solid var(--border); border-radius: 10px; font-size: 13px; }
+    .tag { padding: 3px 8px; border-radius: 6px; font-size: 11px; font-weight: 700; }
+    .tag-cash { background: #d1fae5; color: #047857; }
+    .tag-card { background: #dbeafe; color: #1e40af; }
 
     /* 月度總覽專屬樣式 */
-    .month-header-card { background: linear-gradient(135deg, #1e293b, #0f172a); color: #fff; border-radius: 12px; padding: 16px; }
+    .month-header-card { background: linear-gradient(135deg, #0f172a, #1e293b); color: #fff; border-radius: 16px; padding: 18px; box-shadow: var(--shadow-lg); }
     .month-header-card h3 { color: #fff; border-left-color: var(--warning); }
-    .fee-badge { background: #fff3cd; color: #856404; padding: 10px; border-radius: 8px; font-size: 13px; font-weight: bold; margin-top: 10px; text-align: center; border: 1px solid #ffeeba; }
+    .fee-badge { background: #fef3c7; color: #92400e; padding: 12px; border-radius: 10px; font-size: 13px; font-weight: 700; margin-top: 12px; text-align: center; border: 1px solid #fde68a; }
     
-    .day-breakdown-item { display: flex; justify-content: space-between; align-items: center; background: #fff; padding: 10px 12px; border-radius: 8px; border: 1px solid var(--border); margin-bottom: 8px; cursor: pointer; transition: 0.15s; }
-    .day-breakdown-item:hover { background: #f0f7ff; border-color: var(--primary); }
+    .day-breakdown-item { display: flex; justify-content: space-between; align-items: center; background: #fff; padding: 12px 14px; border-radius: 10px; border: 1px solid var(--border); margin-bottom: 8px; cursor: pointer; transition: all 0.15s; }
+    .day-breakdown-item:active { background: #f0fdf4; border-color: var(--success); }
+
+    /* 里程試算專屬樣式 */
+    .calc-result-box {
+      background: linear-gradient(135deg, #10b981, #059669);
+      color: #ffffff;
+      padding: 18px;
+      border-radius: 14px;
+      text-align: center;
+      margin-top: 10px;
+      box-shadow: 0 4px 12px rgba(16, 185, 129, 0.25);
+    }
+    .calc-result-box .val { font-size: 34px; font-weight: 800; margin: 4px 0; }
+    .calc-result-box .tag { font-size: 12px; background: rgba(255,255,255,0.2); padding: 4px 10px; border-radius: 20px; display: inline-block; margin-top: 4px; }
+    .rule-info { background: #f8fafc; border: 1px solid var(--border); border-radius: 12px; padding: 12px 14px; font-size: 12px; color: var(--slate); line-height: 1.6; }
+    .rule-info ul { margin: 4px 0 0 0; padding-left: 18px; }
+    .test-case-badge { background: #eff6ff; border: 1px solid #bfdbfe; border-radius: 10px; padding: 10px 12px; font-size: 12px; color: #1e40af; margin-top: 10px; }
+    .test-case-badge span { font-weight: 700; cursor: pointer; text-decoration: underline; }
 
     /* 彈出編輯視窗 */
-    .modal-overlay { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.5); display: none; justify-content: center; align-items: center; z-index: 1000; padding: 15px; }
-    .modal { background: #fff; border-radius: 12px; padding: 20px; width: 100%; max-width: 400px; box-shadow: 0 10px 25px rgba(0,0,0,0.2); }
+    .modal-overlay { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(15, 23, 42, 0.6); backdrop-filter: blur(4px); display: none; justify-content: center; align-items: center; z-index: 1000; padding: 16px; }
+    .modal { background: #fff; border-radius: 16px; padding: 22px; width: 100%; max-width: 420px; box-shadow: var(--shadow-lg); }
 
     /* 迷你提示 Toast */
-    .toast-overlay { position: fixed; top: 20px; left: 50%; transform: translateX(-50%); z-index: 2000; display: none; }
-    .toast-box { background: #212529; color: #fff; padding: 10px 20px; border-radius: 20px; font-weight: bold; font-size: 14px; box-shadow: 0 4px 12px rgba(0,0,0,0.25); display: flex; align-items: center; gap: 8px; }
+    .toast-overlay { position: fixed; top: 24px; left: 50%; transform: translateX(-50%); z-index: 2000; display: none; }
+    .toast-box { background: #0f172a; color: #fff; padding: 12px 24px; border-radius: 30px; font-weight: 700; font-size: 14px; box-shadow: var(--shadow-lg); display: flex; align-items: center; gap: 8px; border: 1px solid #334155; }
+
+    .reset-link { font-size: 12px; color: #94a3b8; text-align: center; margin-top: 15px; cursor: pointer; text-decoration: underline; }
   </style>
 </head>
 <body>
 
 <div class="container">
   
-  <!-- 最上方台北標準時間列 (24小時制) -->
+  <!-- 最上方台北標準時間列 -->
   <div class="time-header-bar">
-    <div>🇹🇼 台北時間</div>
+    <div>🇹🇼 台北標準時間</div>
     <div class="time-display" id="taipeiClock">加載中...</div>
   </div>
 
-  <!-- 頂部 Tab 選單 -->
+  <!-- 頂部 Tab 選單 (4頁) -->
   <div class="tab-bar">
-    <div class="tab-btn active" onclick="switchTab('tab-entry')">📝 今日記帳</div>
-    <div class="tab-btn" onclick="switchTab('tab-daily')">📊 每日數據</div>
-    <div class="tab-btn" onclick="switchTab('tab-monthly')">📅 月度總覽</div>
+    <button class="tab-btn active" onclick="switchTab('tab-entry')">📝 記帳</button>
+    <button class="tab-btn" onclick="switchTab('tab-daily')">📊 數據</button>
+    <button class="tab-btn" onclick="switchTab('tab-monthly')">📅 月覽</button>
+    <button class="tab-btn" onclick="switchTab('tab-calc')">🚕 試算</button>
   </div>
 
   <!-- 【頁面 1：今日記帳】 -->
   <div class="tab-content active" id="tab-entry">
-    <!-- 日期選擇卡片 -->
     <div class="card">
       <div class="input-group" style="margin: 0;">
-        <label for="workDate">📅 選擇工作日期</label>
+        <label for="workDate">📅 選擇工作班次日期</label>
         <input type="date" id="workDate" onchange="onDateChange()">
       </div>
     </div>
 
-    <!-- 工作時間卡片 (24小時制區間) -->
     <div class="card">
       <h3>⏱️ 當日出勤時間 (24小時制區間)</h3>
       <div class="time-grid">
@@ -149,34 +185,48 @@
       </div>
     </div>
 
-    <!-- 新增單筆訂單 -->
     <div class="card">
       <h3>新增單筆收入</h3>
-      <div class="input-group">
-        <label for="orderTime">⏰ 訂單時間 (24H選單，預設帶入當下)</label>
-        <select id="orderTime"></select>
+      <div style="display: grid; grid-template-columns: 1.2fr 1fr; gap: 10px;">
+        <div class="input-group">
+          <label for="orderDate">📅 訂單日期</label>
+          <input type="date" id="orderDate">
+        </div>
+        <div class="input-group">
+          <label for="orderTime">⏰ 時間 (24H)</label>
+          <select id="orderTime"></select>
+        </div>
       </div>
+      
       <div class="input-group">
         <label for="fare">總收入 (X)</label>
         <input type="number" id="fare" placeholder="例如：500" oninput="calcSingle()">
       </div>
+      <div class="quick-amt-group">
+        <div class="quick-amt-btn" onclick="quickFare(200)">+200</div>
+        <div class="quick-amt-btn" onclick="quickFare(300)">+300</div>
+        <div class="quick-amt-btn" onclick="quickFare(400)">+400</div>
+        <div class="quick-amt-btn" onclick="quickFare(500)">+500</div>
+      </div>
+
       <div class="input-group">
         <label for="tip">小費 (+)</label>
         <input type="number" id="tip" placeholder="0" oninput="calcSingle()">
       </div>
+
       <label>收款方式</label>
       <div class="pay-type-group">
-        <div class="pay-btn active-cash" id="btnCash" onclick="setPayType('現金')">💵 現金</div>
-        <div class="pay-btn" id="btnCard" onclick="setPayType('刷卡')">💳 刷卡</div>
+        <button class="pay-btn active-cash" id="btnCash" onclick="setPayType('現金')">💵 現金</button>
+        <button class="pay-btn" id="btnCard" onclick="setPayType('刷卡')">💳 刷卡</button>
       </div>
+
       <div class="single-result">
-        <div style="font-size: 12px; color: #666;">本單估計實收 (X*0.8 - 65 + 小費)</div>
+        <div style="font-size: 12px; color: var(--slate); font-weight: 600;">本單估計實收 (X×0.8 - $65 + 小費)</div>
         <div class="amount" id="singleNet">NT$ 0</div>
       </div>
-      <button class="btn btn-success" style="margin-top: 10px;" onclick="addOrder()">新增這筆訂單</button>
+      <button class="btn btn-success" style="margin-top: 12px;" onclick="addOrder()">➕ 新增這筆訂單</button>
     </div>
 
-    <!-- 當日交通費 -->
     <div class="card">
       <h3>當日交通費總支出 (-)</h3>
       <div class="trans-grid">
@@ -203,18 +253,24 @@
       </div>
     </div>
 
-    <!-- 最下方獨立儲存按鈕 -->
-    <button class="btn btn-dark" style="margin-bottom: 15px; padding: 14px; font-size: 16px;" onclick="saveWholeDayRecord()">✅ 儲存並完成當日紀錄</button>
+    <button class="btn btn-dark" style="margin-bottom: 10px;" onclick="saveWholeDayRecord()">✅ 儲存並完成當日紀錄</button>
+    <div class="reset-link" onclick="resetAllData()">⚠️ 重置/清空所有資料庫紀錄</div>
   </div>
 
   <!-- 【頁面 2：每日數據】 -->
   <div class="tab-content" id="tab-daily">
     <div class="card">
       <h3><span id="displayDateText">當日</span> 數據詳情</h3>
-      <div class="summary-box">
+      
+      <div class="hero-stat-card">
+        <div style="font-size: 13px; opacity: 0.9;">【當日最終淨利潤】</div>
+        <div class="val" id="d_final_profit">NT$ 0</div>
+      </div>
+
+      <div class="summary-box" style="margin-top: 12px;">
         <div class="stat-row">
           <span>當日跑單數</span>
-          <span id="d_count">0 單</span>
+          <span id="d_count" style="font-weight: 700;">0 單</span>
         </div>
         <div class="stat-row">
           <span>當日營業額 (原始總收入 X)</span>
@@ -222,45 +278,39 @@
         </div>
         <div class="stat-row">
           <span>當日小費總計</span>
-          <span id="d_tip_total">NT$ 0</span>
+          <span id="d_tip_total" style="font-weight: 700;">NT$ 0</span>
         </div>
         <div class="stat-row">
-          <span>💵 當日現金收取總額 (原始營業額+小費)</span>
+          <span>💵 當日現金收取總額 (營業額+小費)</span>
           <span class="text-success" id="d_cash_gross">NT$ 0</span>
         </div>
         <div class="stat-row">
           <span>💳 當日刷卡扣20%實收 (預計撥款)</span>
           <span class="text-primary" id="d_card_net_80">NT$ 0</span>
         </div>
-        <!-- 刷卡 T+2 撥款動態提示 -->
-        <div class="stat-row" style="background: #e0f2fe; padding: 6px 8px; margin: 4px 0; border-radius: 6px; border: 1px solid #bae6fd;">
-          <span style="color: #0369a1; font-weight: bold;">📅 刷卡入帳預估 (T+2避開假日)</span>
-          <span style="color: #0284c7; font-weight: bold;" id="d_card_payout_date">無刷卡收入</span>
+        <div class="stat-row" style="background: #f0f9ff; padding: 8px 10px; margin: 6px 0; border-radius: 8px; border: 1px solid #bae6fd;">
+          <span style="color: #0369a1; font-weight: 700;">📅 刷卡入帳預估 (T+2避假日)</span>
+          <span style="color: #0284c7; font-weight: 700; text-align: right;" id="d_card_payout_date">無刷卡收入</span>
         </div>
         <div class="stat-row">
-          <span>單號實收總計 (已扣20%+65)</span>
-          <span id="d_order_net">NT$ 0</span>
+          <span>單號實收總計 (已扣20%+$65)</span>
+          <span id="d_order_net" style="font-weight: 700;">NT$ 0</span>
         </div>
         <div class="stat-row">
           <span>當日交通費總支出</span>
           <span class="text-danger" id="d_trans_total">- NT$ 0</span>
         </div>
-        <!-- 每日交通費占比 -->
-        <div class="stat-row" style="background: #fff3cd; padding: 6px 8px; margin: 2px 0; border-radius: 4px;">
-          <span style="color: #856404; font-weight: bold;">📊 當日交通費占比 (佔單號實收)</span>
-          <span style="color: #856404; font-weight: bold;" id="d_trans_ratio">0.0%</span>
+        <div class="stat-row" style="background: #fef3c7; padding: 8px 10px; margin: 4px 0; border-radius: 8px;">
+          <span style="color: #92400e; font-weight: 700;">📊 當日交通費占比 (佔單號實收)</span>
+          <span style="color: #92400e; font-weight: 700;" id="d_trans_ratio">0.0%</span>
         </div>
-        <div class="stat-row" style="font-size: 16px; margin-top: 4px;">
-          <span>【當日最終淨利潤】</span>
-          <span class="text-success" id="d_final_profit">NT$ 0</span>
-        </div>
-        <div class="stat-row" style="background: #eef6ff; margin: 6px -12px -12px -12px; padding: 8px 12px; border-radius: 0 0 8px 8px;">
-          <span>⚡ 當日平均時薪 (共 <b id="d_hours_num">0</b> 小時)</span>
+        <div class="stat-row" style="background: #eff6ff; margin: 8px -14px -14px -14px; padding: 10px 14px; border-radius: 0 0 12px 12px;">
+          <span style="font-weight: 700; color: var(--dark);">⚡ 當日平均時薪 (共 <b id="d_hours_num">0</b> 小時)</span>
           <span class="text-primary" id="d_hourly_wage" style="font-size: 16px;">NT$ 0 / 小時</span>
         </div>
       </div>
 
-      <div style="margin-top: 15px;">
+      <div style="margin-top: 16px;">
         <label>當日訂單明細 (可編輯/刪除)</label>
         <div class="history-list" id="orderList"></div>
       </div>
@@ -271,80 +321,135 @@
   <div class="tab-content" id="tab-monthly">
     <div class="month-header-card">
       <h3>整月營運總覽</h3>
-      <div class="input-group" style="margin-bottom: 12px;">
-        <label for="monthPicker" style="color: #ccc;">切換統計月份</label>
+      <div class="input-group" style="margin-bottom: 14px;">
+        <label for="monthPicker" style="color: #94a3b8;">切換統計月份</label>
         <input type="month" id="monthPicker" onchange="renderMonthSummary()" style="background: #334155; color: #fff; border-color: #475569;">
       </div>
 
-      <div class="summary-box" style="background: rgba(255,255,255,0.05); color: #fff; border-color: rgba(255,255,255,0.1);">
+      <div class="summary-box" style="background: rgba(255,255,255,0.06); color: #fff; border-color: rgba(255,255,255,0.12);">
         <div class="stat-row" style="border-bottom-color: rgba(255,255,255,0.1);">
           <span>當月跑單總數</span>
-          <span style="color: var(--warning);" id="m_count">0 單</span>
+          <span style="color: var(--warning); font-weight: 700;" id="m_count">0 單</span>
         </div>
         <div class="stat-row" style="border-bottom-color: rgba(255,255,255,0.1);">
           <span>當月營業額 (原始總收入 X)</span>
-          <span style="color: #60a5fa;" id="m_gross">NT$ 0</span>
+          <span style="color: #60a5fa; font-weight: 700;" id="m_gross">NT$ 0</span>
         </div>
         <div class="stat-row" style="border-bottom-color: rgba(255,255,255,0.1);">
           <span>當月小費總額</span>
-          <span id="m_tip">NT$ 0</span>
+          <span id="m_tip" style="font-weight: 700;">NT$ 0</span>
         </div>
         <div class="stat-row" style="border-bottom-color: rgba(255,255,255,0.1);">
           <span>平台抽成總額 (20%)</span>
-          <span style="color: #f87171;" id="m_cut">- NT$ 0</span>
+          <span style="color: #f87171; font-weight: 700;" id="m_cut">- NT$ 0</span>
         </div>
         <div class="stat-row" style="border-bottom-color: rgba(255,255,255,0.1);">
           <span>定額平台費總計 ($65 × 單數)</span>
-          <span style="color: #f87171;" id="m_fix_fee">- NT$ 0</span>
+          <span style="color: #f87171; font-weight: 700;" id="m_fix_fee">- NT$ 0</span>
         </div>
         <div class="stat-row" style="border-bottom-color: rgba(255,255,255,0.1);">
           <span>當月交通費總支出</span>
-          <span style="color: #f87171;" id="m_trans">- NT$ 0</span>
+          <span style="color: #f87171; font-weight: 700;" id="m_trans">- NT$ 0</span>
         </div>
-        <!-- 全月交通費總占比 -->
-        <div class="stat-row" style="border-bottom-color: rgba(255,255,255,0.1); background: rgba(251, 191, 36, 0.15); margin: 2px -12px; padding: 6px 12px;">
-          <span style="color: #fbbf24; font-weight: bold;">📊 當月交通費總占比 (佔當月單號實收)</span>
-          <span style="color: #fbbf24; font-weight: bold;" id="m_trans_ratio">0.0%</span>
+        <div class="stat-row" style="border-bottom-color: rgba(255,255,255,0.1); background: rgba(251, 191, 36, 0.15); margin: 4px -14px; padding: 8px 14px;">
+          <span style="color: #fbbf24; font-weight: 700;">📊 當月交通費總占比</span>
+          <span style="color: #fbbf24; font-weight: 700;" id="m_trans_ratio">0.0%</span>
         </div>
         <div class="stat-row" style="border-bottom-color: rgba(255,255,255,0.1);">
           <span>當月總出勤工時</span>
-          <span style="color: #38bdf8;" id="m_work_hours">0 小時</span>
+          <span style="color: #38bdf8; font-weight: 700;" id="m_work_hours">0 小時</span>
         </div>
-        <div class="stat-row" style="font-size: 17px; margin-top: 4px;">
+        <div class="stat-row" style="font-size: 18px; margin-top: 6px;">
           <span>【當月最終淨利潤】</span>
-          <span style="color: #4cd137;" id="m_profit">NT$ 0</span>
+          <span style="color: #34d399; font-weight: 800;" id="m_profit">NT$ 0</span>
         </div>
-        <div class="stat-row" style="background: rgba(14, 165, 233, 0.15); margin: 6px -12px -12px -12px; padding: 10px 12px; border-radius: 0 0 8px 8px;">
-          <span>⚡ 當月平均時薪</span>
-          <span style="color: #38bdf8; font-size: 18px;" id="m_hourly_wage">NT$ 0 / 小時</span>
+        <div class="stat-row" style="background: rgba(14, 165, 233, 0.15); margin: 8px -14px -14px -14px; padding: 12px 14px; border-radius: 0 0 12px 12px;">
+          <span style="font-weight: 700;">⚡ 當月平均時薪</span>
+          <span style="color: #38bdf8; font-size: 18px; font-weight: 800;" id="m_hourly_wage">NT$ 0 / 小時</span>
         </div>
       </div>
 
       <div class="fee-badge">
-        📌 下個月需給公司的平台費 (單數 × 65)：<br>
-        <span style="font-size: 22px; color: #d97706;" id="m_platform_fee">NT$ 0</span>
+        📌 下個月需付給公司的平台費 (單數 × $65)：<br>
+        <span style="font-size: 24px; color: #d97706; font-weight: 800;" id="m_platform_fee">NT$ 0</span>
       </div>
     </div>
 
-    <!-- 當月每日拆解列表 -->
     <div class="card">
-      <h3>當月每日營運明細 (點擊可查看該日)</h3>
+      <h3>當月每日營運明細 (點擊查看詳情)</h3>
       <div id="monthDayBreakdown"></div>
+    </div>
+  </div>
+
+  <!-- 【頁面 4：里程費用試算器】 -->
+  <div class="tab-content" id="tab-calc">
+    <div class="card">
+      <h3>🚕 里程費用試算器</h3>
+      
+      <div class="input-group">
+        <label for="rideTime">⏰ 上車時間點</label>
+        <select id="rideTime" onchange="calculateFare()"></select>
+      </div>
+
+      <div class="input-group">
+        <label for="distance">📏 行駛公里數 (km)</label>
+        <input type="number" id="distance" step="0.1" min="0" placeholder="例如：10.5" oninput="calculateFare()">
+        
+        <div class="quick-amt-group" style="margin-top: 8px; margin-bottom: 0;">
+          <div class="quick-amt-btn" onclick="setKm(3)">3 km</div>
+          <div class="quick-amt-btn" onclick="setKm(10)">10 km</div>
+          <div class="quick-amt-btn" onclick="setKm(10.5)">10.5 km</div>
+          <div class="quick-amt-btn" onclick="setKm(31)">31 km</div>
+        </div>
+      </div>
+
+      <div class="calc-result-box">
+        <div style="font-size: 13px; opacity: 0.9;">估計應收費用</div>
+        <div class="val" id="totalFare">NT$ 0</div>
+        <div class="tag" id="calcBreakdown">請輸入公里數</div>
+      </div>
+
+      <div class="test-case-badge">
+        💡 <b>快速測試範例：</b><br>
+        • <span onclick="applyTestCase('02:00', 10)">清晨 02:00 / 10 公里 ➔ $600</span><br>
+        • <span onclick="applyTestCase('02:00', 10.5)">清晨 02:00 / 10.5 公里 ➔ $650</span><br>
+        • <span onclick="applyTestCase('22:00', 31)">晚上 22:00 / 31 公里 ➔ $1540</span>
+      </div>
+    </div>
+
+    <div class="card">
+      <h3>📌 收費規則說明</h3>
+      <div class="rule-info">
+        <strong>【時段基價】</strong>
+        <ul>
+          <li><b>深夜時段 (00:00~05:59)</b>：10 公里內起跳價 <b>$600</b></li>
+          <li><b>一般時段 (06:00~23:59)</b>：3 公里內 <b>$380</b>，3~10 公里一律 <b>$490</b></li>
+        </ul>
+        <strong>【超過 10 公里超程費】</strong>
+        <ul>
+          <li><b>10.1 ~ 30 公里</b>：每多 1 公里 +$50 (未滿 1 公里無條件進位)</li>
+          <li><b>超過 30 公里</b>：每多 2 公里 +$50 (未滿 2 公里無條件進位)</li>
+        </ul>
+      </div>
     </div>
   </div>
 
 </div>
 
-<!-- 彈出式 Toast 迷你提示視窗 -->
+<!-- 迷你提示 Toast -->
 <div class="toast-overlay" id="toastBox">
-  <div class="toast-box">✅ 已完成當日紀錄！</div>
+  <div class="toast-box">✅ 已成功儲存當日紀錄！</div>
 </div>
 
 <!-- 彈出式編輯訂單 Modal -->
 <div class="modal-overlay" id="editModal">
   <div class="modal">
-    <h3>✏️ 編輯訂單數據</h3>
+    <h3 style="border-left-color: var(--primary);">✏️ 編輯訂單數據</h3>
     <input type="hidden" id="edit_id">
+    <div class="input-group">
+      <label for="edit_orderDate">訂單日期</label>
+      <input type="date" id="edit_orderDate">
+    </div>
     <div class="input-group">
       <label for="edit_orderTime">訂單時間 (24H)</label>
       <select id="edit_orderTime"></select>
@@ -359,12 +464,12 @@
     </div>
     <label>收款方式</label>
     <div class="pay-type-group">
-      <div class="pay-btn" id="editBtnCash" onclick="setEditPayType('現金')">💵 現金</div>
-      <div class="pay-btn" id="editBtnCard" onclick="setEditPayType('刷卡')">💳 刷卡</div>
+      <button class="pay-btn" id="editBtnCash" onclick="setEditPayType('現金')">💵 現金</button>
+      <button class="pay-btn" id="editBtnCard" onclick="setEditPayType('刷卡')">💳 刷卡</button>
     </div>
-    <div style="display: flex; gap: 10px; margin-top: 15px;">
-      <button class="btn btn-dark" onclick="closeEditModal()">取消</button>
-      <button class="btn btn-success" style="margin: 0;" onclick="saveEditedOrder()">儲存修改</button>
+    <div style="display: flex; gap: 10px; margin-top: 18px;">
+      <button class="btn btn-dark" style="flex: 1;" onclick="closeEditModal()">取消</button>
+      <button class="btn btn-success" style="flex: 1;" onclick="saveEditedOrder()">儲存修改</button>
     </div>
   </div>
 </div>
@@ -376,9 +481,10 @@
 
   const todayStr = new Date().toISOString().split('T')[0];
   document.getElementById('workDate').value = todayStr;
+  document.getElementById('orderDate').value = todayStr;
   document.getElementById('monthPicker').value = todayStr.substring(0, 7);
 
-  // 台北標準時間實時動態時鐘 (24小時制)
+  // 台北標準時間實時動態時鐘
   function updateTaipeiClock() {
     const now = new Date();
     const options = {
@@ -406,19 +512,18 @@
       if (p.type === 'second') second = p.value;
     });
 
-    const formattedTime = `${year}/${month}/${day} (${weekday}) ${hour}:${minute}:${second}`;
-    document.getElementById('taipeiClock').innerText = formattedTime;
+    document.getElementById('taipeiClock').innerText = `${year}/${month}/${day} (${weekday}) ${hour}:${minute}:${second}`;
   }
 
   setInterval(updateTaipeiClock, 1000);
   updateTaipeiClock();
 
-  // 初始化 24 小時時間選擇清單 (以 15 分鐘為間隔)
   function initTimeOptions() {
     const startSelect = document.getElementById('startTime');
     const endSelect = document.getElementById('endTime');
     const orderSelect = document.getElementById('orderTime');
     const editOrderSelect = document.getElementById('edit_orderTime');
+    const rideTimeSelect = document.getElementById('rideTime');
 
     let html = '<option value="">未設定</option>';
     let orderHtml = '';
@@ -435,6 +540,7 @@
     endSelect.innerHTML = html;
     orderSelect.innerHTML = orderHtml;
     editOrderSelect.innerHTML = orderHtml;
+    rideTimeSelect.innerHTML = orderHtml;
 
     setOrderTimeNow();
   }
@@ -452,6 +558,14 @@
     const roundedM = Math.floor(m / 15) * 15;
     const targetStr = `${String(h).padStart(2, '0')}:${String(roundedM).padStart(2, '0')}`;
     document.getElementById('orderTime').value = targetStr;
+    document.getElementById('rideTime').value = targetStr;
+  }
+
+  function quickFare(amt) {
+    const fareEl = document.getElementById('fare');
+    const curr = parseFloat(fareEl.value) || 0;
+    fareEl.value = curr + amt;
+    calcSingle();
   }
 
   initTimeOptions();
@@ -482,6 +596,7 @@
 
   function onDateChange() {
     const d = getSelectedDate();
+    document.getElementById('orderDate').value = d;
     initDateData(d);
     loadInputsForSelectedDate();
     renderAll();
@@ -521,10 +636,12 @@
 
     const net = calcSingle();
     const d = getSelectedDate();
+    const orderDate = document.getElementById('orderDate').value || d;
     const time = document.getElementById('orderTime').value || '00:00';
 
     db[d].orders.unshift({
       id: Date.now(),
+      orderDate,
       time,
       fare,
       tip,
@@ -567,6 +684,7 @@
     if (!order) return;
 
     document.getElementById('edit_id').value = order.id;
+    document.getElementById('edit_orderDate').value = order.orderDate || d;
     document.getElementById('edit_orderTime').value = order.time;
     document.getElementById('edit_fare').value = order.fare;
     document.getElementById('edit_tip').value = order.tip;
@@ -581,6 +699,7 @@
 
   function saveEditedOrder() {
     const id = parseInt(document.getElementById('edit_id').value);
+    const orderDate = document.getElementById('edit_orderDate').value;
     const time = document.getElementById('edit_orderTime').value;
     const fare = parseFloat(document.getElementById('edit_fare').value) || 0;
     const tip = parseFloat(document.getElementById('edit_tip').value) || 0;
@@ -588,6 +707,7 @@
 
     const idx = db[d].orders.findIndex(o => o.id === id);
     if (idx !== -1) {
+      db[d].orders[idx].orderDate = orderDate;
       db[d].orders[idx].time = time;
       db[d].orders[idx].fare = fare;
       db[d].orders[idx].tip = tip;
@@ -670,13 +790,22 @@
     localStorage.setItem('driver_db_v2', JSON.stringify(db));
   }
 
+  function resetAllData() {
+    if (confirm('確定要清空資料庫中的所有上記帳數據嗎？此操作不可逆！')) {
+      localStorage.removeItem('driver_db_v2');
+      db = {};
+      initDateData(todayStr);
+      renderAll();
+      alert('已成功清空所有數據，回復全新空白狀態！');
+    }
+  }
+
   function renderAll() {
     loadInputsForSelectedDate();
     renderDaySummary();
     renderMonthSummary();
   }
 
-  // 渲染當日數據頁
   function renderDaySummary() {
     const d = getSelectedDate();
     const data = db[d] || { orders: [], transport: {}, workHours: {} };
@@ -685,8 +814,8 @@
     let grossFare = 0;
     let totalTip = 0;
     let totalOrderNet = 0;
-    let cashGrossTotal = 0; // 現金總營業額（原始總收入 + 小費）
-    let cardGrossTotal = 0;
+    let cashGrossTotal = 0;
+    let cardPayoutMap = {};
 
     const listEl = document.getElementById('orderList');
     listEl.innerHTML = '';
@@ -696,22 +825,26 @@
       totalTip += o.tip;
       totalOrderNet += o.net;
 
+      const orderDateStr = o.orderDate || d;
+      const displayDateShort = orderDateStr.substring(5).replace('-', '/');
+
       if (o.payType === '現金') {
-        cashGrossTotal += (o.fare + o.tip); // 未扣抽成的原始現金收取量
+        cashGrossTotal += (o.fare + o.tip);
       } else if (o.payType === '刷卡') {
-        cardGrossTotal += o.fare;
+        if (!cardPayoutMap[orderDateStr]) cardPayoutMap[orderDateStr] = 0;
+        cardPayoutMap[orderDateStr] += o.fare;
       }
 
       const item = document.createElement('div');
       item.className = 'history-item';
       item.innerHTML = `
         <div>
-          <span>${o.time}</span>
+          <span style="font-weight:600; color:var(--slate);">${displayDateShort} ${o.time}</span>
           <span class="tag ${o.payType==='現金'?'tag-cash':'tag-card'}">${o.payType}</span>
-          <span>收入$${o.fare} (小費$${o.tip})</span>
+          <span style="margin-left:4px;">收入$${o.fare} (小費$${o.tip})</span>
         </div>
-        <div>
-          <strong>NT$ ${o.net.toLocaleString('zh-TW')}</strong>
+        <div style="display:flex; align-items:center; gap:6px;">
+          <strong style="color:var(--dark);">NT$ ${o.net.toLocaleString('zh-TW')}</strong>
           <button class="btn-outline-primary" onclick="openEditModal(${o.id})">✏️</button>
           <button class="btn-outline-danger" onclick="deleteOrder(${o.id})">✕</button>
         </div>
@@ -719,13 +852,18 @@
       listEl.appendChild(item);
     });
 
-    const cardNet80 = Math.round(cardGrossTotal * 0.8);
+    let totalCardNet80 = 0;
+    let cardPayoutTextArr = [];
 
-    let cardPayoutText = '無刷卡收入';
-    if (cardGrossTotal > 0) {
-      const payoutDateStr = calculateTPlus2BusinessDay(d);
-      cardPayoutText = `預計於 ${payoutDateStr} 撥款實收 NT$ ${cardNet80.toLocaleString('zh-TW')}`;
-    }
+    Object.keys(cardPayoutMap).forEach(orderDateStr => {
+      const gross = cardPayoutMap[orderDateStr];
+      const net80 = Math.round(gross * 0.8);
+      totalCardNet80 += net80;
+      const payoutDateStr = calculateTPlus2BusinessDay(orderDateStr);
+      cardPayoutTextArr.push(`${payoutDateStr} 撥款 NT$ ${net80.toLocaleString('zh-TW')}`);
+    });
+
+    let cardPayoutText = cardPayoutTextArr.length > 0 ? cardPayoutTextArr.join('<br>') : '無刷卡收入';
 
     const t = data.transport || {};
     const transTotal = (t.wemo || 0) + (t.goshare || 0) + (t.carshare || 0) + (t.transit || 0) + (t.taxi || 0);
@@ -747,8 +885,8 @@
     document.getElementById('d_gross_fare').innerText = `NT$ ${grossFare.toLocaleString('zh-TW')}`;
     document.getElementById('d_tip_total').innerText = `NT$ ${totalTip.toLocaleString('zh-TW')}`;
     document.getElementById('d_cash_gross').innerText = `NT$ ${cashGrossTotal.toLocaleString('zh-TW')}`;
-    document.getElementById('d_card_net_80').innerText = `NT$ ${cardNet80.toLocaleString('zh-TW')}`;
-    document.getElementById('d_card_payout_date').innerText = cardPayoutText;
+    document.getElementById('d_card_net_80').innerText = `NT$ ${totalCardNet80.toLocaleString('zh-TW')}`;
+    document.getElementById('d_card_payout_date').innerHTML = cardPayoutText;
     document.getElementById('d_order_net').innerText = `NT$ ${totalOrderNet.toLocaleString('zh-TW')}`;
     document.getElementById('d_trans_total').innerText = `- NT$ ${transTotal.toLocaleString('zh-TW')}`;
     document.getElementById('d_trans_ratio').innerText = dayTransRatioText;
@@ -757,7 +895,6 @@
     document.getElementById('d_hourly_wage').innerText = hourlyWageText;
   }
 
-  // 渲染月度總覽頁
   function renderMonthSummary() {
     const selectedMonth = document.getElementById('monthPicker').value;
     let mCount = 0;
@@ -810,17 +947,17 @@
       };
       item.innerHTML = `
         <div>
-          <div style="font-weight: bold;">${dateStr} (${dCount}單)</div>
-          <div style="font-size: 12px; color: #666;">
+          <div style="font-weight: 700; color: var(--dark);">${dateStr} (${dCount}單)</div>
+          <div style="font-size: 12px; color: var(--slate); margin-top: 2px;">
             營業額: $${dGross.toLocaleString('zh-TW')} | 交通費: $${dTrans.toLocaleString('zh-TW')}
           </div>
-          <div style="font-size: 11px; color: #d97706; font-weight: bold; margin-top: 2px;">
+          <div style="font-size: 11px; color: #d97706; font-weight: 700; margin-top: 2px;">
             交通費占比: ${ratioText}
           </div>
         </div>
         <div style="text-align: right;">
-          <div style="font-weight: bold; color: var(--success);">NT$ ${dProfit.toLocaleString('zh-TW')}</div>
-          <div style="font-size: 11px; color: var(--primary);">查看細節 ›</div>
+          <div style="font-weight: 800; color: var(--success); font-size: 15px;">NT$ ${dProfit.toLocaleString('zh-TW')}</div>
+          <div style="font-size: 11px; color: var(--primary); font-weight: 600; margin-top: 2px;">查看細節 ›</div>
         </div>
       `;
       breakdownEl.appendChild(item);
@@ -851,6 +988,74 @@
     document.getElementById('m_profit').innerText = `NT$ ${mNetTotal.toLocaleString('zh-TW')}`;
     document.getElementById('m_hourly_wage').innerText = mHourlyWageText;
     document.getElementById('m_platform_fee').innerText = `NT$ ${mFixFee.toLocaleString('zh-TW')}`;
+  }
+
+  /* 里程試算邏輯函數 */
+  function setKm(val) {
+    document.getElementById('distance').value = val;
+    calculateFare();
+  }
+
+  function applyTestCase(timeStr, kmVal) {
+    document.getElementById('rideTime').value = timeStr;
+    document.getElementById('distance').value = kmVal;
+    calculateFare();
+  }
+
+  function calculateFare() {
+    const timeStr = document.getElementById('rideTime').value;
+    const distanceInput = parseFloat(document.getElementById('distance').value);
+
+    if (isNaN(distanceInput) || distanceInput <= 0) {
+      document.getElementById('totalFare').innerText = 'NT$ 0';
+      document.getElementById('calcBreakdown').innerText = '請輸入有效公里數';
+      return;
+    }
+
+    const hour = parseInt(timeStr.split(':')[0], 10);
+    const isMidnight = (hour >= 0 && hour < 6);
+
+    let fare = 0;
+    let detailText = '';
+    let billKm = distanceInput;
+
+    if (isMidnight) {
+      if (distanceInput <= 10) {
+        fare = 600;
+        detailText = `深夜時段 ($600 / 10公里內涵蓋)`;
+      } else if (distanceInput <= 30) {
+        const extraKm = Math.ceil(distanceInput - 10);
+        billKm = 10 + extraKm;
+        fare = 600 + (extraKm * 50);
+        detailText = `深夜起跳$600 + 超過10km計 ${extraKm}km ($${extraKm*50})`;
+      } else {
+        const extraKmOver30 = Math.ceil((distanceInput - 30) / 2);
+        billKm = 30 + (extraKmOver30 * 2);
+        fare = 600 + (20 * 50) + (extraKmOver30 * 50);
+        detailText = `深夜起跳$600 + 10-30km($1000) + 30km以上進位計 ${extraKmOver30*2}km ($${extraKmOver30*50})`;
+      }
+    } else {
+      if (distanceInput <= 3) {
+        fare = 380;
+        detailText = `一般時段 3公里內起跳價 $380`;
+      } else if (distanceInput <= 10) {
+        fare = 490;
+        detailText = `一般時段 3~10公里均一價 $490`;
+      } else if (distanceInput <= 30) {
+        const extraKm = Math.ceil(distanceInput - 10);
+        billKm = 10 + extraKm;
+        fare = 490 + (extraKm * 50);
+        detailText = `一般10km費$490 + 超過10km計 ${extraKm}km ($${extraKm*50})`;
+      } else {
+        const extraKmOver30 = Math.ceil((distanceInput - 30) / 2);
+        billKm = 30 + (extraKmOver30 * 2);
+        fare = 490 + (20 * 50) + (extraKmOver30 * 50);
+        detailText = `一般30km基礎費$1490 + 30km以上進位計 ${extraKmOver30*2}km ($${extraKmOver30*50})`;
+      }
+    }
+
+    document.getElementById('totalFare').innerText = `NT$ ${fare.toLocaleString('zh-TW')}`;
+    document.getElementById('calcBreakdown').innerText = `${detailText} (計 ${billKm} km)`;
   }
 </script>
 
